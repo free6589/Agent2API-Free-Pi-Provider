@@ -156,7 +156,10 @@ mod tests {
     fn fallback_catalog_has_the_official_default_model() {
         let models = default_models();
         assert_eq!(
-            models.first().and_then(|item| item.get("id")).and_then(Value::as_str),
+            models
+                .first()
+                .and_then(|item| item.get("id"))
+                .and_then(Value::as_str),
             Some("deepseek/deepseek-v4-flash")
         );
     }
