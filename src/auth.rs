@@ -264,7 +264,10 @@ mod tests {
             "handle": "test-user"
         });
         let public = account_view(&secret);
-        assert_eq!(public.get("tokenTail").and_then(Value::as_str), Some("alue"));
+        assert_eq!(
+            public.get("tokenTail").and_then(Value::as_str),
+            Some("alue")
+        );
         assert!(public.get("token").is_none());
         assert!(public.get("session_id").is_none());
     }
