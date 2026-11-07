@@ -527,4 +527,3 @@ mod tests {
         assert_eq!(next_network_failure_count(5), None);
     }
 }
-
