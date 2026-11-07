@@ -56,7 +56,10 @@ impl Provider for FreePiProvider {
         req: proto::ChatRequest,
     ) -> SendFuture<'a, ChatPlan> {
         Box::pin(async move {
-            let account = ctx.store_get(ID, &req.account).await.map_err(String::from)?;
+            let account = ctx
+                .store_get(ID, &req.account)
+                .await
+                .map_err(String::from)?;
             let token = account
                 .secret
                 .get("token")
@@ -300,9 +303,8 @@ impl Provider for FreePiProvider {
             let client = http::client_for(ctx)?;
             match auth::poll_token(&client, flow).await? {
                 auth::TokenPoll::Pending { retry_after } => Ok(proto::LoginPoll::Pending {
-                    hint: retry_after.map(|seconds| {
-                        format!("GitHub 尚未完成授权，建议等待 {seconds} 秒后继续")
-                    }),
+                    hint: retry_after
+                        .map(|seconds| format!("GitHub 尚未完成授权，建议等待 {seconds} 秒后继续")),
                 }),
                 auth::TokenPoll::Issued(token) => {
                     let profile = auth::fetch_me(&client, &token).await?;
@@ -312,8 +314,9 @@ impl Provider for FreePiProvider {
                         .is_some_and(|version| version != auth::CONSENT_VERSION)
                     {
                         return Ok(proto::LoginPoll::Failed {
-                            message: "free-pi 服务端返回的同意版本与当前版本不一致，请重新发起登录。"
-                                .to_string(),
+                            message:
+                                "free-pi 服务端返回的同意版本与当前版本不一致，请重新发起登录。"
+                                    .to_string(),
                         });
                     }
                     Ok(proto::LoginPoll::Done {
@@ -382,7 +385,10 @@ mod tests {
 
     #[test]
     fn manual_token_file_accepts_raw_token_or_credentials_json() {
-        assert_eq!(parse_token_file("jwt-value").ok().as_deref(), Some("jwt-value"));
+        assert_eq!(
+            parse_token_file("jwt-value").ok().as_deref(),
+            Some("jwt-value")
+        );
         assert_eq!(
             parse_token_file(r#"{"token":"jwt-value"}"#).ok().as_deref(),
             Some("jwt-value")
@@ -393,12 +399,18 @@ mod tests {
     #[test]
     fn rate_limits_are_not_account_rotation_errors() {
         let class = FreePiProvider.classify(429, &json!({"error":{"message":"too many requests"}}));
-        assert!(matches!(class, proto::ErrorClass::Fatal { status: 429, .. }));
+        assert!(matches!(
+            class,
+            proto::ErrorClass::Fatal { status: 429, .. }
+        ));
     }
 
     #[test]
     fn expired_credentials_are_not_retried_with_the_same_jwt() {
         let class = FreePiProvider.classify(401, &json!({"message":"unauthorized"}));
-        assert!(matches!(class, proto::ErrorClass::Fatal { status: 401, .. }));
+        assert!(matches!(
+            class,
+            proto::ErrorClass::Fatal { status: 401, .. }
+        ));
     }
 }
