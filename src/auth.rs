@@ -304,14 +304,12 @@ pub async fn poll_token(client: &Client, session_id: &str) -> Result<TokenPoll, 
                 } => Ok(TokenPoll::Pending {
                     retry_after: Some(wait_seconds),
                     hint: Some(format!(
-                        "free-pi 登录轮询遇到临时网络错误，连续失败 {attempt}/{} 次；约 {wait_seconds} 秒后自动重试。错误：{error}",
-                        MAX_NETWORK_FAILURES
+                        "free-pi 登录轮询遇到临时网络错误，连续失败 {attempt}/{MAX_NETWORK_FAILURES} 次；约 {wait_seconds} 秒后自动重试。错误：{error}"
                     )),
                 }),
                 NetworkRetry::Exhausted => {
                     Ok(TokenPoll::Failed(format!(
-                        "free-pi 登录轮询连续发生 {} 次网络错误，已停止重试：{error}",
-                        MAX_NETWORK_FAILURES
+                        "free-pi 登录轮询连续发生 {MAX_NETWORK_FAILURES} 次网络错误，已停止重试：{error}"
                     )))
                 }
             };
@@ -464,6 +462,12 @@ fn validate_verification_uri(uri: &str) -> Result<(), String> {
         );
     }
     Ok(())
+}
+
+#[cfg(test)]
+fn next_network_failure_count(current: u8) -> Option<u8> {
+    let next = current.saturating_add(1);
+    (next < MAX_NETWORK_FAILURES).then_some(next)
 }
 
 #[cfg(test)]
