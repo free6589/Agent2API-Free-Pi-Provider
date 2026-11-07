@@ -3,7 +3,7 @@
   "name": "Free Pi Provider",
   "description": "Personal-use integration for free-pi's official OpenAI-compatible API.",
   "license": "AGPL-3.0-only",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "protocol": 1,
   "providers": [
     {

@@ -279,6 +279,7 @@ impl Provider for FreePiProvider {
             let client = http::client_for(ctx)?;
             let device = auth::start_device_flow(&client).await?;
             auth::submit_consent(&client, &device.session_id).await?;
+            auth::register_poll_session(&device.session_id, device.interval_seconds);
 
             Ok(proto::LoginStart {
                 flow: device.session_id,
@@ -302,9 +303,12 @@ impl Provider for FreePiProvider {
         Box::pin(async move {
             let client = http::client_for(ctx)?;
             match auth::poll_token(&client, flow).await? {
-                auth::TokenPoll::Pending { retry_after } => Ok(proto::LoginPoll::Pending {
-                    hint: retry_after
-                        .map(|seconds| format!("GitHub 尚未完成授权，建议等待 {seconds} 秒后继续")),
+                auth::TokenPoll::Pending { retry_after, hint } => Ok(proto::LoginPoll::Pending {
+                    hint: hint.or_else(|| {
+                        retry_after.map(|seconds| {
+                            format!("GitHub 尚未完成授权，约 {seconds} 秒后继续检查")
+                        })
+                    }),
                 }),
                 auth::TokenPoll::Issued(token) => {
                     let profile = auth::fetch_me(&client, &token).await?;

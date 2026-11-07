@@ -2,7 +2,7 @@
 
 An unofficial, personal-use Agent2API provider plugin for free-pi's OpenAI-compatible API.
 
-This first version targets **Linux x86_64** and implements GitHub Device Flow login, local gateway account storage, dynamic model discovery, Chat Completions forwarding, and read-only usage reporting.
+This first release targets **Linux x86_64** and implements GitHub Device Flow login, local gateway account storage, dynamic model discovery, Chat Completions forwarding, and read-only usage reporting.
 
 > **Important:** Use only with an account you own and for your own use. Do not share credentials, expose this gateway to other people, pool accounts, evade limits, or remove sponsored content. free-pi's terms say that API-mode responses may contain labeled sponsored content. Prompts, code, files, and responses may be saved and used for training or shared with third parties. Do not submit secrets, confidential, personal, regulated, or sensitive data. Review the current [Terms](https://freepi.ai/terms) and [Privacy Policy](https://freepi.ai/privacy) before enabling the provider.
 
@@ -19,14 +19,20 @@ The package ID is `agent2api-free-pi-provider`; the provider ID exposed to routi
 3. Open the GitHub device URL and enter the displayed code.
 4. Agent2API polls until free-pi issues a JWT. The JWT is stored in Agent2API's managed account store and is excluded from the public account view.
 
-## Supported in v0.1.0
+## Supported in v0.1.1
 
-- GitHub OAuth device authorization and consent version tracking.
+- GitHub OAuth device authorization and consent version tracking, with bounded network retries and server-directed polling delays.
 - JWT account storage and identity display.
 - Dynamic model list from `GET /client-version`.
 - OpenAI-compatible `/v1/chat/completions` requests, including streaming responses passed through by Agent2API.
 - Read-only account usage summary from `GET /me/stats` (USD-denominated fields are intentionally omitted).
 - Explicit error handling for invalid login and rate limits. No token-refresh endpoint is assumed.
+
+## v0.1.1 fixes
+
+- Retry consent submission on transient network failures.
+- Keep device login alive through up to five consecutive polling network failures.
+- Honor free-pi's `retry_after` value so the plugin does not poll GitHub too early.
 
 ## Deliberate limits
 
