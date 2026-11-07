@@ -1,0 +1,20 @@
+{
+  "id": "agent2api-free-pi-provider",
+  "name": "Free Pi Provider",
+  "description": "Personal-use integration for free-pi's official OpenAI-compatible API.",
+  "license": "AGPL-3.0-only",
+  "version": "0.1.0",
+  "protocol": 1,
+  "providers": [
+    {
+      "id": "free-pi",
+      "label": "Free Pi",
+      "order": 100,
+      "default_enabled": true
+    }
+  ],
+  "entry": {
+    "x86_64-unknown-linux-gnu": "bin/agent2api-free-pi-provider"
+  },
+  "homepage": "https://github.com/free6589/Agent2API-Free-Pi-Provider"
+}
