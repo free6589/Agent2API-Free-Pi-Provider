@@ -7,7 +7,10 @@ pub const BASE_URL: &str = "https://api.freepi.ai";
 pub fn client(proxy: &str) -> Result<reqwest::Client, String> {
     let mut builder = reqwest::Client::builder()
         .use_rustls_tls()
-        .user_agent(concat!("agent2api-free-pi-provider/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!(
+            "agent2api-free-pi-provider/",
+            env!("CARGO_PKG_VERSION")
+        ))
         .timeout(Duration::from_secs(25));
 
     let proxy = proxy.trim();
