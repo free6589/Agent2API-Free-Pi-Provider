@@ -149,7 +149,10 @@ fn record_network_failure(session_id: &str) -> Result<NetworkRetry, String> {
                 created_at: Instant::now(),
             });
         state.consecutive_network_failures = state.consecutive_network_failures.saturating_add(1);
-        (state.consecutive_network_failures, state.interval_seconds.max(5))
+        (
+            state.consecutive_network_failures,
+            state.interval_seconds.max(5),
+        )
     };
 
     if attempt >= MAX_NETWORK_FAILURES {
@@ -184,9 +187,12 @@ fn effective_poll_delay(interval_seconds: u64, retry_after: Option<u64>) -> u64 
 }
 
 fn parse_retry_after(value: &Value) -> Option<u64> {
-    value
-        .as_u64()
-        .or_else(|| value.as_f64().filter(|seconds| seconds.is_finite() && *seconds > 0.0).map(|seconds| seconds.ceil() as u64))
+    value.as_u64().or_else(|| {
+        value
+            .as_f64()
+            .filter(|seconds| seconds.is_finite() && *seconds > 0.0)
+            .map(|seconds| seconds.ceil() as u64)
+    })
 }
 
 async fn post_json_with_network_retry(
@@ -210,9 +216,7 @@ async fn post_json_with_network_retry(
                 );
             }
             Err(error) => {
-                return Err(format!(
-                    "{operation}时网络失败，已重试 4 次：{error}"
-                ));
+                return Err(format!("{operation}时网络失败，已重试 4 次：{error}"));
             }
         }
     }
@@ -520,6 +524,7 @@ mod tests {
     }
 }
 
+#[cfg(test)]
 fn next_network_failure_count(current: u8) -> Option<u8> {
     let next = current.saturating_add(1);
     (next < MAX_NETWORK_FAILURES).then_some(next)
