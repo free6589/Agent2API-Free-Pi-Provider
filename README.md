@@ -17,7 +17,7 @@ The package ID is `agent2api-free-pi-provider`; the provider ID exposed to routi
 1. In Agent2API, enable **Free Pi** and choose its GitHub browser login.
 2. The login button explicitly records acceptance of free-pi's current consent version after displaying the data-use disclosure.
 3. Open the GitHub device URL and enter the displayed code.
-4. Agent2API polls until free-pi issues a JWT. The JWT is stored only in Agent2API's encrypted/managed account store, never in the public account view.
+4. Agent2API polls until free-pi issues a JWT. The JWT is stored in Agent2API's managed account store and is excluded from the public account view.
 
 ## Supported in v0.1.0
 
