@@ -528,8 +528,3 @@ mod tests {
     }
 }
 
-#[cfg(test)]
-fn next_network_failure_count(current: u8) -> Option<u8> {
-    let next = current.saturating_add(1);
-    (next < MAX_NETWORK_FAILURES).then_some(next)
-}
