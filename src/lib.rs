@@ -100,8 +100,7 @@ fn header(headers: &Value, name: &str) -> String {
         .to_string()
 }
 
-fn error_message(body: &[u8]) -> (String, String) {
-    let parsed = serde_json::from_slice::<Value>(body).unwrap_or(Value::Null);
+fn error_fields(parsed: &Value) -> (String, String) {
     let code = parsed["code"]
         .as_str()
         .or_else(|| parsed["error"]["code"].as_str())
@@ -116,6 +115,11 @@ fn error_message(body: &[u8]) -> (String, String) {
         .take(500)
         .collect::<String>();
     (code, message)
+}
+
+fn error_message(body: &[u8]) -> (String, String) {
+    let parsed = serde_json::from_slice::<Value>(body).unwrap_or(Value::Null);
+    error_fields(&parsed)
 }
 
 /// 上游错误信封按 provider-adaptation 四档归档：401 凭据、429 额度/速率、其余照原样透传。
@@ -154,14 +158,39 @@ fn handle(method: &str, params: Value) -> Result<Value> {
             chat::forward(params)?;
             Ok(Value::Null)
         }
+        // 网关只认四档（协议 `ErrorClass` 是封闭枚举）：限额 / 凭证失效 /
+        // 内容拦截 / 透传。字段必须给全 —— 少一个 `status` 就会被宿主判成
+        // 「分类无法解析」，整条错误降级成 Fatal 且丢掉上游原话。
         "classify" => {
             let status = params["status"].as_u64().unwrap_or(502) as u16;
-            Ok(json!({ "kind": match status {
-                401 => "token_expired",
-                429 => "quota_limited",
-                409 => "concurrent_session",
-                _ => "fatal",
-            } }))
+            let (_, body) = error_fields(&params["body"]);
+            let message = if body.is_empty() {
+                format!("Free Pi 返回 HTTP {status}")
+            } else {
+                body
+            };
+            Ok(match status {
+                // 只有一枚 90 天登录 JWT，没有续期材料：凭证失效交网关按
+                // 「刷新后同一账号重试一次」处置，重试仍失败就是终态。
+                401 => json!({ "kind": "token_expired", "message": message }),
+                // 429 是上游的额度/速率闸门（并发会话也走这个码），交给网关轮换。
+                429 => json!({
+                    "kind": "quota_limited",
+                    "status": status,
+                    "message": message,
+                    "upstream_code": Value::Null,
+                    "reset_at": Value::Null,
+                }),
+                // 其余原样透传：免费额度被广告闸门暂停（403 `ads_required`）时
+                // 换账号解不开，只有把上游那句「去跑 free-pi-cli 让广告显示」
+                // 原话交给用户才有用。
+                _ => json!({
+                    "kind": "fatal",
+                    "status": status,
+                    "message": message,
+                    "upstream_code": Value::Null,
+                }),
+            })
         }
         "is_error_response" => Ok(json!(params["status"].as_u64().unwrap_or(502) >= 400)),
         "error.policy" => Ok(json!({ "stop": false })),

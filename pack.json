@@ -3,7 +3,7 @@
   "name": "Free · Free Pi",
   "description": "Free Pi（free-pi-cli 背后的推理服务）独立 WASM 插件：OpenAI 兼容直通转发（/v1/chat/completions），JWT 走标准 Bearer，附 x-session-id / x-client-version 伪装头；模型目录取 /client-version，余额取 /me/stats（百分比与 credits，不展示美元）。上游没有续期路由，refresh 能力位为 false。",
   "license": "AGPL-3.0-only",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "protocol": 1,
   "provider_category": "agent",
   "providers": [

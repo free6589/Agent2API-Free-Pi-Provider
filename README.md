@@ -8,7 +8,7 @@ Agent2API 的 Free Pi 提供商插件。**只提供 WASM 形态**：宿主从 3.
 |---|---|
 | 包 id | `agent2api-wasm-free-pi` |
 | provider id | `free-pi`（存量 id 不改名） |
-| 版本 | `0.2.0` |
+| 版本 | `0.2.1` |
 | 入口 | `entry.wasm32-unknown-unknown` → `free-pi.wasm` |
 | ABI | `abi = 1`，导入只允许 `agent2api.call` / `agent2api.read` |
 | 沙箱 | 无 WASI；文件、进程、环境变量都不暴露；每次调用新建实例 |
@@ -17,14 +17,18 @@ Agent2API 的 Free Pi 提供商插件。**只提供 WASM 形态**：宿主从 3.
 
 | 能力 | 状态 | 依据 |
 |---|---|---|
-| 对话（含流式） | 已实现，未验收 | `POST https://api.freepi.ai/v1/chat/completions`，JWT 走标准 Bearer |
-| 模型目录 | 已实现，未验收 | `GET /client-version` 的 `models[].{id,name}`，静态兜底一条 |
-| 余额 | 已实现，未验收 | `GET /me/stats`；只展示百分比与 credits，不展示美元 |
+| 对话（含流式） | 已实测 | `POST https://api.freepi.ai/v1/chat/completions`，JWT 走标准 Bearer；2026-11-22 在本机 3.5.0-beta.7 上跑通非流式与 SSE 流式各一次 |
+| 模型目录 | 已实测 | `GET /client-version` 的 `models[].{id,name}`；同日实测拉到 27 条，静态兜底一条仅在网络失败时使用 |
+| 余额 | 已实测 | `GET /me/stats`；同日实测 `43% · 6378 credits`，只展示百分比与 credits，不展示美元 |
+| 错误分类 | 已实测 | `errors.v1` 的 `classify`：401→`token_expired`、429→`quota_limited`、其余→`fatal`，字段按协议 `ErrorClass` 给全（缺 `status` 会被宿主判成「分类无法解析」并丢上游原话） |
 | 续期 | 不适用 | 上游只有 90 天登录 JWT，没有 refresh 路由（`refresh = false`），过期需重新登录 |
 | 签到 / 领取 | 不适用 | 上游无对应入口 |
 | 网页登录 | 不适用 | 上游登录是 GitHub 设备授权 + 本地写 `~/.free-pi/agent`，宿主侧只做粘贴 JWT |
 
-`wasm.json` 的 `verified` 保持 `false`：编译通过、能安装都不等于能力已验收。
+`wasm.json` 的 `verified` 仍未置 `true`：它是包级断言，不是单次实测结论。上面四行「已实测」是
+2026-11-22 在本机 3.5.0-beta.7 实例上的具体证据（目录 27 条、余额 43%、一次非流式与一次流式对话）。
+同一天还撞到上游的广告闸门：账号的免费额度被暂停时上游回 `403 ads_required`（要求先在官方 CLI 里
+让广告显示），插件按 `fatal` 原样透传这句话 —— 换账号解不开，别误判成插件故障。
 
 ## 目录
 
@@ -53,7 +57,7 @@ cargo build --release --target wasm32-unknown-unknown
 包内只需要 `pack.json`、`wasm.json` 和入口模块：
 
 ```bash
-VERSION=0.2.0
+VERSION=0.2.1
 rm -rf dist && mkdir -p dist/free-pi
 cp pack.json wasm.json dist/free-pi/
 cp target/wasm32-unknown-unknown/release/agent2api_wasm_free_pi.wasm dist/free-pi/free-pi.wasm
