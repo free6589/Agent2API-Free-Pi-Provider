@@ -9,19 +9,33 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-22.04
+  wasm:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.88.0
+      - uses: dtolnay/rust-toolchain@stable
         with:
+          targets: wasm32-unknown-unknown
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       - name: Format
         run: cargo fmt --all -- --check
-      - name: Tests
-        run: cargo test --all-targets
       - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
-      - name: Release build
-        run: cargo build --release
+        run: cargo clippy --release --target wasm32-unknown-unknown -- -D warnings
+      - name: Build provider module
+        run: cargo build --release --target wasm32-unknown-unknown
+      - name: Check package manifest against the built module
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          pack = json.loads(pathlib.Path("pack.json").read_text())
+          wasm = json.loads(pathlib.Path("wasm.json").read_text())
+          module = pathlib.Path("target/wasm32-unknown-unknown/release/agent2api_wasm_free_pi.wasm")
+          assert module.is_file(), "wasm 产物缺失"
+          assert list(pack["entry"]) == ["wasm32-unknown-unknown"], pack["entry"]
+          assert pack["entry"]["wasm32-unknown-unknown"].endswith(".wasm")
+          assert len(pack["providers"]) == 1, "一个包只声明一个提供商身份"
+          assert wasm["abi"] == 1 and wasm["memory_mib"] == 128, wasm
+          print("pack ok:", pack["id"], pack["version"], module.stat().st_size, "bytes")
+          PY

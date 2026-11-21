@@ -1,27 +1,23 @@
 [package]
-name = "agent2api-free-pi-provider"
-version = "0.1.1"
+name = "agent2api-wasm-free-pi"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.88"
 license = "AGPL-3.0-only"
-description = "Personal-use Agent2API provider for the free-pi OpenAI-compatible API"
+description = "Agent2API WASM provider for the free-pi OpenAI-compatible API"
 repository = "https://github.com/free6589/Agent2API-Free-Pi-Provider"
 
-[[bin]]
-name = "agent2api-free-pi-provider"
-path = "src/main.rs"
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
-agent2api-provider-protocol = { git = "https://github.com/ProvidersPlugin/Agent2Providers", tag = "v3.4.0" }
-agent2api-provider-sdk = { git = "https://github.com/ProvidersPlugin/Agent2Providers", tag = "v3.4.0" }
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "socks"] }
+# WASM 宿主只提供受控能力：网络、时钟、SSE、资源池都从 SDK 走，不接 WASI。
+agent2api-wasm-sdk = { git = "https://github.com/ProvidersPlugin/Agent2Providers", rev = "7536f3c2b2497767f83be6cfff59cc1943d6860b" }
 serde_json = "1"
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
-url = "2"
-uuid = { version = "=1.18.1", features = ["v4"] }
 
 [profile.release]
+opt-level = "s"
 lto = true
 codegen-units = 1
-opt-level = "s"
+panic = "abort"
 strip = true
